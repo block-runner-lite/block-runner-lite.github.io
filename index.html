@@ -147,6 +147,9 @@ const keys={};
 let cheatBuffer="";
 const cheatCode="SHIBBY1";
 
+const foreverCode="SWISSMISS234";
+let foreverInvincible=false;
+
 let flash=false;
 
 setInterval(()=>{
@@ -211,6 +214,34 @@ activateInvincible();
 cheatBuffer="";
 }
 
+if(
+cheatBuffer.includes(
+foreverCode
+)
+&& !foreverInvincible
+){
+
+foreverInvincible=true;
+invincible=true;
+
+score+=100000;
+
+document.getElementById(
+"invincibleDisplay"
+).style.display=
+"block";
+
+document.getElementById(
+"invincibleTimer"
+).innerText=
+"ON";
+
+showMessage(
+"FOREVER MODE +100000"
+);
+
+cheatBuffer="";
+}
 }
 
 });
@@ -222,6 +253,8 @@ keys[e.key]=false;
 });
 
 function activateInvincible(){
+
+if(foreverInvincible)return;
 
 invincible=true;
 
@@ -363,6 +396,7 @@ gameOver=false;
 paused=false;
 cheatEnabled=false;
 invincible=false;
+foreverInvincible=false;
 
 document.getElementById(
 "score"
@@ -374,7 +408,7 @@ document.getElementById(
 
 document.getElementById(
 "invincibleTimer"
-).innerText="";
+).innerText="OFF";
 
 }
 
