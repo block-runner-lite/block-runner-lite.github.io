@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Block Runner Lite</title>
+
+<style>
+body{
+margin:0;
+background:#222;
+font-family:Arial;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+#container{
+position:relative;
+text-align:center;
+width:900px;
+}
+
+canvas{
+background:black;
+border:3px solid white;
+}
+
+.popup{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:rgba(0,0,0,.95);
+padding:25px;
+border-radius:15px;
+width:350px;
+min-height:420px;
+z-index:10;
+overflow-y:auto;
+}
+
+button{
+padding:10px;
+margin:5px;
+width:220px;
+font-size:16px;
+cursor:pointer;
+border:none;
+border-radius:8px;
+}
+
+input{
+padding:10px;
+width:220px;
+margin-bottom:10px;
+}
+
+#gameOverScreen,
+#pauseScreen{
+display:none;
+}
+
+#leaderboard{
+position:absolute;
+right:-250px;
+top:0;
+width:220px;
+background:#333;
+padding:10px;
+border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="container">
+
+<h2>Block Runner Lite</h2>
+
+<p>Player: <span id="playerName">---</span></p>
+<p>Mode: <span id="modeText">---</span></p>
+<p>Score: <span id="score">0</span></p>
+
+<p id="invincibleDisplay" style="display:none;">
+Invincible:
+<span id="invincibleTimer"></span>
+</p>
+
+<canvas id="game" width="500" height="600"></canvas>
+
+<div id="leaderboard">
+<h3>Leaderboard</h3>
+<ol id="scoresList"></ol>
+</div>
+
+<div class="popup" id="menu">
+
+<h2>Start Game</h2>
+
+<input id="nameInput" placeholder="Enter Name">
+
+<h3>Select Mode</h3>
+
+<button onclick="startGame('Classic')">Classic</button>
+<button onclick="startGame('Speed Rush')">Speed Rush</button>
+<button onclick="startGame('Tiny Mode')">Tiny Mode</button>
+<button onclick="startGame('Chaos Mode')">Chaos Mode</button>
+<button onclick="startGame('Mega Survival')">Mega Survival</button>
+
+</div>
+
+<div class="popup" id="gameOverScreen">
+
+<h1>You Died</h1>
+
+<p>
+Final Score:
+<span id="finalScore"></span>
+</p>
+
+<button onclick="restartGame()">Play Again</button>
+<button onclick="returnToMenu()">Main Menu</button>
+
+</div>
+
+<div class="popup" id="pauseScreen">
+
+<h1>Paused</h1>
+
+<button onclick="resumeGame()">Resume</button>
+<button onclick="returnToMenu()">Main Menu</button>
+
+</div>
+
+</div>
+
+<script>
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+let player=null;
+let enemies=[];
+let score=0;
+let gameOver=true;
+let paused=false;
+
+let playerName="Player";
+let currentMode="";
+let cheatEnabled=false;
+
+let invincible=false;
+let invincibleTime=0;
+
+const invincibleCode="X9PHANTOM77";
+
+const keys={};
+
+let cheatBuffer="";
+const cheatCode="SHIBBY1";
+
+let flash=false;
+
+setInterval(()=>{
+
+if(cheatEnabled){
+flash=!flash;
+}
+
+},250);
+
+document.addEventListener(
+"keydown",
+e=>{
+
+keys[e.key]=true;
+
+if(e.key==="Escape"){
+
+if(!gameOver&&player){
+togglePause();
+}
+
+return;
+}
+
+if(e.key.length===1){
+
+cheatBuffer+=e.key.toUpperCase();
+
+if(cheatBuffer.length>15){
+cheatBuffer=
+cheatBuffer.slice(-15);
+}
+
+if(
+cheatBuffer.includes(
+cheatCode
+)
+&& !cheatEnabled
+){
+
+cheatEnabled=true;
+
+score+=5000;
+
+showMessage(
+"CHEAT ACTIVATED"
+);
+
+cheatBuffer="";
+}
+
+if(
+cheatBuffer.includes(
+invincibleCode
+)
+&& !invincible
+){
+
+activateInvincible();
+
+cheatBuffer="";
+}
+
+}
+
+});
+
+document.addEventListener(
+"keyup",
+e=>{
+keys[e.key]=false;
+});
+
+function activateInvincible(){
+
+invincible=true;
+
+document.getElementById(
+"invincibleDisplay"
+).style.display="block";
+
+invincibleTime=30;
+
+document.getElementById(
+"invincibleTimer"
+).innerText=
+"30s";
+
+showMessage(
+"INVINCIBLE MODE"
+);
+
+const timer=
+setInterval(()=>{
+
+if(
+gameOver||
+paused
+)return;
+
+invincibleTime--;
+
+document.getElementById(
+"invincibleTimer"
+).innerText=
+invincibleTime+"s";
+
+if(
+invincibleTime<=0
+){
+
+clearInterval(timer);
+
+invincible=false;
+
+document.getElementById(
+"invincibleTimer"
+).innerText=
+"OFF";
+
+showMessage(
+"INVINCIBLE ENDED"
+);
+
+setTimeout(()=>{
+
+document.getElementById(
+"invincibleDisplay"
+).style.display=
+"none";
+
+},1500);
+
+}
+
+},1000);
+
+}
+
+function togglePause(){
+
+paused=!paused;
+
+document.getElementById(
+"pauseScreen"
+).style.display=
+paused?"block":"none";
+
+}
+
+function resumeGame(){
+
+paused=false;
+
+document.getElementById(
+"pauseScreen"
+).style.display=
+"none";
+
+}
+
+function startGame(mode){
+
+currentMode=mode;
+
+playerName=
+document.getElementById(
+"nameInput"
+).value.trim();
+
+if(!playerName){
+playerName="Player";
+}
+
+document.getElementById(
+"playerName"
+).innerText=
+playerName;
+
+document.getElementById(
+"modeText"
+).innerText=
+mode;
+
+document.getElementById(
+"menu"
+).style.display=
+"none";
+
+initializeGame();
+
+}
+
+function initializeGame(){
+
+let size=50;
+
+if(currentMode==="Tiny Mode"){
+size=25;
+}
+
+player={
+x:225,
+y:540,
+width:size,
+height:size,
+speed:7
+};
+
+enemies=[];
+score=0;
+gameOver=false;
+paused=false;
+cheatEnabled=false;
+invincible=false;
+
+document.getElementById(
+"score"
+).innerText=0;
+
+document.getElementById(
+"invincibleDisplay"
+).style.display="none";
+
+document.getElementById(
+"invincibleTimer"
+).innerText="";
+
+}
+
+function spawnEnemy(){
+
+if(gameOver||paused)
+return;
+
+enemies.push({
+x:Math.random()*450,
+y:-50,
+width:50,
+height:50,
+speed:3+Math.random()*4
+});
+
+}
+
+setInterval(
+spawnEnemy,
+800
+);
+
+function update(){
+
+if(
+gameOver||
+paused||
+!player
+)return;
+
+if(score>=10000){
+player.speed=10;
+}
+
+if(keys["ArrowLeft"]||keys["a"]||keys["A"])
+player.x-=player.speed;
+
+if(keys["ArrowRight"]||keys["d"]||keys["D"])
+player.x+=player.speed;
+
+if(keys["ArrowUp"]||keys["w"]||keys["W"])
+player.y-=player.speed;
+
+if(keys["ArrowDown"]||keys["s"]||keys["S"])
+player.y+=player.speed;
+
+player.x=Math.max(
+0,
+Math.min(
+canvas.width-player.width,
+player.x
+));
+
+player.y=Math.max(
+0,
+Math.min(
+canvas.height-player.height,
+player.y
+));
+
+enemies.forEach(enemy=>{
+
+enemy.y+=enemy.speed;
+
+if(
+player.x<enemy.x+enemy.width &&
+player.x+player.width>enemy.x &&
+player.y<enemy.y+enemy.height &&
+player.y+player.height>enemy.y
+){
+
+if(!invincible){
+endGame();
+}
+
+}
+
+});
+
+score++;
+
+document.getElementById(
+"score"
+).innerText=
+Math.floor(score/10);
+
+}
+
+function draw(){
+
+ctx.clearRect(
+0,0,
+canvas.width,
+canvas.height
+);
+
+if(!player)return;
+
+ctx.fillStyle=
+invincible
+?
+"lime"
+:
+"blue";
+
+ctx.fillRect(
+player.x,
+player.y,
+player.width,
+player.height
+);
+
+enemies.forEach(enemy=>{
+
+ctx.fillStyle=
+cheatEnabled
+?
+(flash?"blue":"yellow")
+:
+"red";
+
+ctx.fillRect(
+enemy.x,
+enemy.y,
+enemy.width,
+enemy.height
+);
+
+});
+
+}
+
+function endGame(){
+
+gameOver=true;
+
+document.getElementById(
+"finalScore"
+).innerText=
+Math.floor(score/10);
+
+document.getElementById(
+"gameOverScreen"
+).style.display=
+"block";
+
+}
+
+function restartGame(){
+
+document.getElementById(
+"gameOverScreen"
+).style.display="none";
+
+initializeGame();
+
+}
+
+function returnToMenu(){
+
+gameOver=true;
+paused=false;
+player=null;
+enemies=[];
+
+document.getElementById(
+"score"
+).innerText=0;
+
+document.getElementById(
+"playerName"
+).innerText="---";
+
+document.getElementById(
+"modeText"
+).innerText="---";
+
+document.getElementById(
+"pauseScreen"
+).style.display="none";
+
+document.getElementById(
+"gameOverScreen"
+).style.display="none";
+
+document.getElementById(
+"invincibleDisplay"
+).style.display="none";
+
+document.getElementById(
+"menu"
+).style.display="block";
+
+}
+
+function showMessage(text){
+
+const msg=
+document.createElement("div");
+
+msg.innerText=text;
+
+msg.style.position="absolute";
+msg.style.top="50px";
+msg.style.left="50%";
+msg.style.transform=
+"translateX(-50%)";
+msg.style.fontSize="30px";
+msg.style.color="yellow";
+
+document.body.appendChild(msg);
+
+setTimeout(()=>{
+msg.remove();
+},1500);
+
+}
+
+function gameLoop(){
+
+update();
+draw();
+
+requestAnimationFrame(
+gameLoop
+);
+
+}
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
