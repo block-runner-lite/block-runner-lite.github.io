@@ -61,15 +61,6 @@ margin-bottom:10px;
 display:none;
 }
 
-#leaderboard{
-position:absolute;
-right:-250px;
-top:0;
-width:220px;
-background:#333;
-padding:10px;
-border-radius:10px;
-}
 </style>
 </head>
 
@@ -89,11 +80,6 @@ Invincible:
 </p>
 
 <canvas id="game" width="500" height="600"></canvas>
-
-<div id="leaderboard">
-<h3>Leaderboard</h3>
-<ol id="scoresList"></ol>
-</div>
 
 <div class="popup" id="menu">
 
@@ -204,7 +190,7 @@ cheatCode
 
 cheatEnabled=true;
 
-score+=5000;
+score+=10000;
 
 showMessage(
 "CHEAT ACTIVATED"
@@ -243,12 +229,12 @@ document.getElementById(
 "invincibleDisplay"
 ).style.display="block";
 
-invincibleTime=30;
+invincibleTime=120;
 
 document.getElementById(
 "invincibleTimer"
 ).innerText=
-"30s";
+"120s";
 
 showMessage(
 "INVINCIBLE MODE"
